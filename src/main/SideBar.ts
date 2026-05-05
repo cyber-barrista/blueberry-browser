@@ -8,6 +8,7 @@ export class SideBar {
   private baseWindow: BaseWindow;
   private llmClient: LLMClient;
   private isVisible: boolean = true;
+  private onNavigate: ((url: string) => void) | null = null;
 
   constructor(baseWindow: BaseWindow) {
     this.baseWindow = baseWindow;
@@ -26,7 +27,14 @@ export class SideBar {
         nodeIntegration: false,
         contextIsolation: true,
         sandbox: false, // Need to disable sandbox for preload to work
+        partition: "persist:ui", // Separate from extension session
       },
+    });
+
+    // Intercept link opens and emit navigation event
+    webContentsView.webContents.setWindowOpenHandler((details) => {
+      this.onNavigate?.(details.url);
+      return { action: "deny" };
     });
 
     // Load the Sidebar React app
@@ -34,12 +42,12 @@ export class SideBar {
       // In development, load through Vite dev server
       const sidebarUrl = new URL(
         "/sidebar/",
-        process.env["ELECTRON_RENDERER_URL"]
+        process.env["ELECTRON_RENDERER_URL"],
       );
       webContentsView.webContents.loadURL(sidebarUrl.toString());
     } else {
       webContentsView.webContents.loadFile(
-        join(__dirname, "../renderer/sidebar.html")
+        join(__dirname, "../renderer/sidebar.html"),
       );
     }
 
@@ -105,5 +113,9 @@ export class SideBar {
 
   getIsVisible(): boolean {
     return this.isVisible;
+  }
+
+  setNavigateHandler(handler: (url: string) => void): void {
+    this.onNavigate = handler;
   }
 }

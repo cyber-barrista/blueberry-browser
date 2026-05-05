@@ -1,4 +1,8 @@
 import { NativeImage, WebContentsView } from "electron";
+import { CWS_INJECT_SCRIPT } from "./cwsInject";
+
+export type ExtensionInstallHandler = (extensionId: string) => void;
+export type InstalledIdsProvider = () => string[];
 
 export class Tab {
   private webContentsView: WebContentsView;
@@ -6,6 +10,8 @@ export class Tab {
   private _title: string;
   private _url: string;
   private _isVisible: boolean = false;
+  private onExtensionInstall: ExtensionInstallHandler | null = null;
+  private getInstalledIds: InstalledIdsProvider | null = null;
 
   constructor(id: string, url: string = "https://www.google.com") {
     this._id = id;
@@ -29,6 +35,14 @@ export class Tab {
     this.loadURL(url);
   }
 
+  setExtensionInstallHandler(handler: ExtensionInstallHandler): void {
+    this.onExtensionInstall = handler;
+  }
+
+  setInstalledIdsProvider(provider: InstalledIdsProvider): void {
+    this.getInstalledIds = provider;
+  }
+
   private setupEventListeners(): void {
     // Update title when page title changes
     this.webContentsView.webContents.on("page-title-updated", (_, title) => {
@@ -38,11 +52,62 @@ export class Tab {
     // Update URL when navigation occurs
     this.webContentsView.webContents.on("did-navigate", (_, url) => {
       this._url = url;
+      console.log("[Tab] did-navigate:", url);
     });
 
     this.webContentsView.webContents.on("did-navigate-in-page", (_, url) => {
       this._url = url;
+      console.log("[Tab] did-navigate-in-page:", url);
+      this.injectCWSButtonIfNeeded(url);
     });
+
+    // Inject after page fully loads
+    this.webContentsView.webContents.on("did-finish-load", () => {
+      const url = this.webContentsView.webContents.getURL();
+      console.log("[Tab] did-finish-load:", url);
+      this.injectCWSButtonIfNeeded(url);
+    });
+
+    // Also try on dom-ready
+    this.webContentsView.webContents.on("dom-ready", () => {
+      const url = this.webContentsView.webContents.getURL();
+      console.log("[Tab] dom-ready:", url);
+      this.injectCWSButtonIfNeeded(url);
+    });
+
+    // Intercept blueberry-install:// protocol
+    this.webContentsView.webContents.on("will-navigate", (event, url) => {
+      console.log("[Tab] will-navigate:", url);
+      if (url.startsWith("blueberry-install://")) {
+        event.preventDefault();
+        const extensionId = url
+          .replace("blueberry-install://", "")
+          .replace("/", "");
+        if (extensionId && this.onExtensionInstall) {
+          this.onExtensionInstall(extensionId);
+        }
+      }
+    });
+  }
+
+  private injectCWSButtonIfNeeded(url: string): void {
+    if (url.includes("chromewebstore.google.com")) {
+      console.log("[CWS] Injecting install button for:", url);
+      const ids = this.getInstalledIds ? this.getInstalledIds() : [];
+      const setIds = `window.__blueberryInstalledIds = ${JSON.stringify(ids)}; window.__blueberryInjected = false;`;
+      this.webContentsView.webContents
+        .executeJavaScript(setIds + CWS_INJECT_SCRIPT)
+        .then(() => console.log("[CWS] Injection successful"))
+        .catch((err) => console.error("[CWS] Injection failed:", err));
+    }
+  }
+
+  reinjectCWSButton(): void {
+    this.injectCWSButtonIfNeeded(this._url);
+  }
+
+  openDevTools(): void {
+    this.webContentsView.webContents.openDevTools({ mode: "detach" });
   }
 
   // Getters

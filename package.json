@@ -26,18 +26,21 @@
     "@electron-toolkit/preload": "3.0.2",
     "@electron-toolkit/utils": "4.0.0",
     "@radix-ui/react-slot": "1.2.3",
+    "adm-zip": "0.5.17",
     "ai": "5.0.44",
     "class-variance-authority": "0.7.1",
     "dotenv": "17.2.2",
     "lucide-react": "0.544.0",
     "react-markdown": "10.1.0",
     "remark-breaks": "4.0.0",
-    "remark-gfm": "4.0.1"
+    "remark-gfm": "4.0.1",
+    "ts-blank-space": "^0.8.0"
   },
   "devDependencies": {
     "@electron-toolkit/eslint-config-prettier": "3.0.0",
     "@electron-toolkit/eslint-config-ts": "3.0.0",
     "@electron-toolkit/tsconfig": "1.0.1",
+    "@types/adm-zip": "0.5.8",
     "@types/node": "22.16.5",
     "@types/react": "19.1.8",
     "@types/react-dom": "19.1.6",

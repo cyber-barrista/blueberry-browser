@@ -1,5 +1,5 @@
 import { BaseWindow, shell } from "electron";
-import { Tab } from "./Tab";
+import { Tab, ExtensionInstallHandler, InstalledIdsProvider } from "./Tab";
 import { TopBar } from "./TopBar";
 import { SideBar } from "./SideBar";
 
@@ -10,6 +10,8 @@ export class Window {
   private tabCounter: number = 0;
   private _topBar: TopBar;
   private _sideBar: SideBar;
+  private _extensionInstallHandler: ExtensionInstallHandler | null = null;
+  private _installedIdsProvider: InstalledIdsProvider | null = null;
 
   constructor() {
     // Create the browser window.
@@ -60,6 +62,17 @@ export class Window {
     this.setupEventListeners();
   }
 
+  setExtensionInstallHandler(handler: ExtensionInstallHandler): void {
+    this._extensionInstallHandler = handler;
+    // Also set on existing tabs
+    this.tabsMap.forEach((tab) => tab.setExtensionInstallHandler(handler));
+  }
+
+  setInstalledIdsProvider(provider: InstalledIdsProvider): void {
+    this._installedIdsProvider = provider;
+    this.tabsMap.forEach((tab) => tab.setInstalledIdsProvider(provider));
+  }
+
   private setupEventListeners(): void {
     this._baseWindow.on("closed", () => {
       // Clean up all tabs when window is closed
@@ -92,6 +105,14 @@ export class Window {
   createTab(url?: string): Tab {
     const tabId = `tab-${++this.tabCounter}`;
     const tab = new Tab(tabId, url);
+
+    // Set up extension install handler
+    if (this._extensionInstallHandler) {
+      tab.setExtensionInstallHandler(this._extensionInstallHandler);
+    }
+    if (this._installedIdsProvider) {
+      tab.setInstalledIdsProvider(this._installedIdsProvider);
+    }
 
     // Add the tab's WebContentsView to the window
     this._baseWindow.contentView.addChildView(tab.view);

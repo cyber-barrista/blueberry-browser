@@ -27,10 +27,19 @@ const topBarAPI = {
     electronAPI.ipcRenderer.invoke("tab-screenshot", tabId),
   tabRunJs: (tabId: string, code: string) =>
     electronAPI.ipcRenderer.invoke("tab-run-js", tabId, code),
-
   // Sidebar
-  toggleSidebar: () =>
-    electronAPI.ipcRenderer.invoke("toggle-sidebar"),
+  toggleSidebar: () => electronAPI.ipcRenderer.invoke("toggle-sidebar"),
+  setSidebarView: (view: string) =>
+    electronAPI.ipcRenderer.invoke("sidebar:set-view", view),
+
+  // Extensions (for toolbar icons)
+  listExtensions: () => electronAPI.ipcRenderer.invoke("extensions:list"),
+  openExtensionPopup: (extensionId: string) =>
+    electronAPI.ipcRenderer.sendSync("extensions:open-popup", extensionId),
+  onExtensionsUpdated: (callback: (extensions: any[]) => void) =>
+    electronAPI.ipcRenderer.on("extensions-updated", (_, extensions) =>
+      callback(extensions),
+    ),
 };
 
 // Use `contextBridge` APIs to expose Electron APIs to
@@ -49,4 +58,3 @@ if (process.contextIsolated) {
   // @ts-ignore (define in dts)
   window.topBarAPI = topBarAPI;
 }
-

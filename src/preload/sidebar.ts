@@ -33,7 +33,7 @@ const sidebarAPI = {
 
   onMessagesUpdated: (callback: (messages: any[]) => void) => {
     electronAPI.ipcRenderer.on("chat-messages-updated", (_, messages) =>
-      callback(messages)
+      callback(messages),
     );
   },
 
@@ -52,6 +52,25 @@ const sidebarAPI = {
 
   // Tab information
   getActiveTabInfo: () => electronAPI.ipcRenderer.invoke("get-active-tab-info"),
+
+  // View switching
+  onSetView: (callback: (view: string) => void) => {
+    electronAPI.ipcRenderer.on("sidebar-set-view", (_, view) => callback(view));
+  },
+
+  // Extensions
+  listExtensions: () => electronAPI.ipcRenderer.invoke("extensions:list"),
+  removeExtension: (extensionId: string) =>
+    electronAPI.ipcRenderer.invoke("extensions:remove", extensionId),
+  toggleExtension: (extensionId: string) =>
+    electronAPI.ipcRenderer.invoke("extensions:toggle", extensionId),
+  openExtensionPopup: (extensionId: string) =>
+    electronAPI.ipcRenderer.sendSync("extensions:open-popup", extensionId),
+  onExtensionsUpdated: (callback: (extensions: any[]) => void) => {
+    electronAPI.ipcRenderer.on("extensions-updated", (_, extensions) =>
+      callback(extensions),
+    );
+  },
 };
 
 // Use `contextBridge` APIs to expose Electron APIs to
