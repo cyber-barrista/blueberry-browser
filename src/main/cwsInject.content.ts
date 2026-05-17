@@ -121,7 +121,7 @@
         btn.style.transform = "scale(1)";
       };
 
-      btn.onclick = function () {
+       btn.onclick = function () {
         (btn as HTMLButtonElement).disabled = true;
         while (btn.firstChild) btn.removeChild(btn.firstChild);
         btn.appendChild(createSvgIcon(true));
@@ -134,8 +134,30 @@
           "@keyframes __bb_spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}";
         document.head.appendChild(style);
 
+        const timeoutId = setTimeout(() => {
+          showInstallError(btn, "Installation timed out. Please try again.");
+        }, 10000);
+
         window.location.href = "blueberry-install://" + extensionId;
+
+        window.addEventListener("beforeunload", () => clearTimeout(timeoutId));
       };
+
+    function showInstallError(btn: HTMLElement, message: string) {
+      while (btn.firstChild) btn.removeChild(btn.firstChild);
+      btn.appendChild(document.createTextNode(message));
+      btn.style.background = "#ef4444";
+      btn.style.boxShadow = "0 4px 12px rgba(239,68,68,0.4)";
+      btn.style.opacity = "1";
+      btn.style.cursor = "pointer";
+      btn.style.transition = "all 0.2s ease";
+      (btn as HTMLButtonElement).disabled = false;
+
+      setTimeout(() => {
+        (window as any).__blueberryInjected = false;
+        btn.remove();
+      }, 3000);
+    }
     }
 
     document.body.appendChild(btn);

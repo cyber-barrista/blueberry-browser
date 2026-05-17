@@ -12,9 +12,8 @@ const tsBlankSpace =
     ? tsBlankSpaceModule
     : (tsBlankSpaceModule as any).default;
 
-const stripped = tsBlankSpace(contentSource).replace(
-  /^export\s*\{\s*\}\s*;?\s*/gm,
-  "",
-);
+const stripped = tsBlankSpace(contentSource)
+  .replace(/^export\s*(?:type\s+)?\{\s*\}\s*;?\s*$/gm, "")
+  .replace(/^export\s+\{\s*\}\s*from\s*['"][^'"]+['"]\s*;?\s*$/gm, "");
 
 export const CWS_INJECT_SCRIPT = stripped + "\nvoid(0);";

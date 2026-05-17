@@ -39,7 +39,7 @@ export class ExtensionManager {
       const info = this.extensions.get(id)!;
       if (info.enabled) {
         try {
-          await session.defaultSession.loadExtension(info.path, {
+          await session.defaultSession.extensions.loadExtension(info.path, {
             allowFileAccess: true,
           });
           console.log(`Loaded extension: ${info.name} (${id})`);
@@ -71,9 +71,12 @@ export class ExtensionManager {
     }
 
     // Load into Electron session
-    const loaded = await session.defaultSession.loadExtension(extensionDir, {
+    const loaded = await session.defaultSession.extensions.loadExtension(extensionDir, {
       allowFileAccess: true,
     });
+
+    // Use the actual loaded extension ID as the canonical ID
+    const actualExtensionId = loaded.id;
 
     // Determine popup URL
     const popupPath =
@@ -81,12 +84,12 @@ export class ExtensionManager {
       manifest.browser_action?.default_popup ||
       null;
     const popupUrl = popupPath
-      ? `chrome-extension://${loaded.id}/${popupPath}`
+      ? `chrome-extension://${actualExtensionId}/${popupPath}`
       : undefined;
 
     // Build extension info
     const info: ExtensionInfo = {
-      id: extensionId,
+      id: actualExtensionId,
       name:
         this.resolveI18n(manifest.name, extensionDir) ||
         loaded.name ||
@@ -99,8 +102,8 @@ export class ExtensionManager {
       popupUrl,
     };
 
-    // Save metadata
-    this.extensions.set(extensionId, info);
+     // Save metadata using the actual extension ID
+    this.extensions.set(actualExtensionId, info);
     this.saveMetadata();
 
     return info;
@@ -115,9 +118,9 @@ export class ExtensionManager {
 
     // Unload from session
     try {
-      await session.defaultSession.removeExtension(extensionId);
-    } catch {
-      // May not be loaded
+      await session.defaultSession.extensions.removeExtension(extensionId);
+    } catch (err) {
+      console.error(`[Extensions] Failed to unload extension ${extensionId} during removal:`, err);
     }
 
     // Delete files
@@ -152,17 +155,22 @@ export class ExtensionManager {
     if (info.enabled) {
       // Disable
       try {
-        await session.defaultSession.removeExtension(extensionId);
-      } catch {
-        // ignore
+        await session.defaultSession.extensions.removeExtension(extensionId);
+      } catch (err) {
+        console.error(`[Extensions] Failed to unload extension ${extensionId}:`, err);
       }
       info.enabled = false;
     } else {
       // Enable
-      await session.defaultSession.loadExtension(info.path, {
-        allowFileAccess: true,
-      });
-      info.enabled = true;
+      try {
+        await session.defaultSession.extensions.loadExtension(info.path, {
+          allowFileAccess: true,
+        });
+        info.enabled = true;
+      } catch (err) {
+        console.error(`[Extensions] Failed to load extension ${extensionId}:`, err);
+        info.enabled = false;
+      }
     }
 
     this.saveMetadata();

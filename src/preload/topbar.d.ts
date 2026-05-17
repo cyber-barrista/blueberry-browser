@@ -7,42 +7,6 @@ interface TabInfo {
   isActive: boolean;
 }
 
-interface TopBarAPI {
-  // Tab management
-  createTab: (
-    url?: string,
-  ) => Promise<{ id: string; title: string; url: string } | null>;
-  closeTab: (tabId: string) => Promise<boolean>;
-  switchTab: (tabId: string) => Promise<boolean>;
-  getTabs: () => Promise<TabInfo[]>;
-
-  // Tab navigation
-  navigateTab: (tabId: string, url: string) => Promise<void>;
-  goBack: (tabId: string) => Promise<void>;
-  goForward: (tabId: string) => Promise<void>;
-  reload: (tabId: string) => Promise<void>;
-
-  // Tab actions
-  tabScreenshot: (tabId: string) => Promise<string | null>;
-  tabRunJs: (tabId: string, code: string) => Promise<any>;
-
-  // Sidebar
-  toggleSidebar: () => Promise<void>;
-  setSidebarView: (view: string) => Promise<boolean>;
-
-  // Extensions
-  listExtensions: () => Promise<any[]>;
-  openExtensionPopup: (extensionId: string) => Promise<boolean>;
-  onExtensionsUpdated: (callback: (extensions: any[]) => void) => void;
-}
-
-declare global {
-  interface Window {
-    electron: ElectronAPI;
-    topBarAPI: TopBarAPI;
-  }
-}
-
 interface ExtensionInfo {
   id: string;
   name: string;
@@ -80,6 +44,7 @@ interface TopBarAPI {
 
   // Sidebar
   toggleSidebar: () => Promise<void>;
+  setSidebarView: (view: string) => Promise<boolean>;
 
   // Topbar expansion
   setExpanded: (expanded: boolean) => Promise<boolean>;
@@ -89,6 +54,7 @@ interface TopBarAPI {
   listExtensions: () => Promise<ExtensionInfo[]>;
   removeExtension: (extensionId: string) => Promise<boolean>;
   toggleExtension: (extensionId: string) => Promise<boolean>;
+  openExtensionPopup: (extensionId: string) => Promise<boolean>;
   onExtensionsUpdated: (
     callback: (extensions: ExtensionInfo[]) => void,
   ) => void;

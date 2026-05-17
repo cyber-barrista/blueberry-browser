@@ -5,7 +5,7 @@ import * as https from "https";
 import AdmZip from "adm-zip";
 
 const EXTENSIONS_DIR = path.join(app.getPath("userData"), "extensions");
-const CHROME_VERSION = "131.0.0.0";
+const CHROME_VERSION = process.versions.chrome || "131.0.6923.0";
 
 /**
  * Ensures the extensions directory exists
@@ -21,7 +21,7 @@ export function getExtensionsDir(): string {
  * Downloads a CRX file from the Chrome Web Store by extension ID
  */
 export async function downloadCrx(extensionId: string): Promise<Buffer> {
-  const url = `https://clients2.google.com/service/update2/crx?response=redirect&acceptformat=crx2,crx3&prodversion=${CHROME_VERSION}&x=id%3D${extensionId}%26installsource%3Dondemand%26uc`;
+  const url = `https://clients2.google.com/service/update2/crx?response=redirect&acceptformat=crx2,crx3&prodversion=${CHROME_VERSION}&x=id%3D${encodeURIComponent(extensionId)}%26installsource%3Dondemand%26uc`;
 
   return new Promise((resolve, reject) => {
     const follow = (targetUrl: string, redirects = 0): void => {

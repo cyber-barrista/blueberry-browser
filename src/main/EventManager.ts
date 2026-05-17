@@ -228,17 +228,29 @@ export class EventManager {
     });
 
     ipcMain.handle("extensions:remove", async (_, extensionId: string) => {
-      const removed = await this.extensionManager.remove(extensionId);
-      if (removed) {
+      try {
+        const removed = await this.extensionManager.remove(extensionId);
+        if (removed) {
+          this.notifyExtensionsUpdated();
+        }
+        return removed;
+      } catch (err) {
+        console.error(`[Extensions] Failed to remove extension ${extensionId}:`, err);
         this.notifyExtensionsUpdated();
+        throw err;
       }
-      return removed;
     });
 
     ipcMain.handle("extensions:toggle", async (_, extensionId: string) => {
-      const enabled = await this.extensionManager.toggle(extensionId);
-      this.notifyExtensionsUpdated();
-      return enabled;
+      try {
+        const enabled = await this.extensionManager.toggle(extensionId);
+        this.notifyExtensionsUpdated();
+        return enabled;
+      } catch (err) {
+        console.error(`[Extensions] Failed to toggle extension ${extensionId}:`, err);
+        this.notifyExtensionsUpdated();
+        throw err;
+      }
     });
 
     // Use ipcMain.on + sendSync to avoid Electron extension system intercepting handle/invoke
@@ -248,11 +260,12 @@ export class EventManager {
         .list()
         .find((e) => e.id === extensionId);
       if (ext && ext.popupUrl) {
-        // Convert chrome-extension://id/path to ext-popup://id/path
-        const popupRelPath = ext.popupUrl.replace(
-          `chrome-extension://${extensionId}/`,
-          "",
-        );
+      // Convert chrome-extension://id/path to ext-popup://id/path
+      const popupRelPath = ext.popupUrl?.replace(/^chrome-extension:\/\/[^/]+\//, "") || "";
+      if (!popupRelPath) {
+        event.returnValue = false;
+        return;
+      }
         const popupUrl = `ext-popup://${extensionId}/${popupRelPath}`;
         const popupWin = new BrowserWindow({
           width: 400,

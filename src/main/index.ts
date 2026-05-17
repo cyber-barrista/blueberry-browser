@@ -121,10 +121,13 @@ app.whenReady().then(() => {
   // Register custom protocol to serve extension popup files
   protocol.handle("ext-popup", (request) => {
     // URL format: ext-popup://extensionId/path/to/file
+    if (!extensionManager) {
+      return new Response("Extension manager not ready", { status: 503 });
+    }
     const url = new URL(request.url);
     const extensionId = url.hostname;
     const filePath = decodeURIComponent(url.pathname);
-    const ext = extensionManager?.list().find((e) => e.id === extensionId);
+    const ext = extensionManager.list().find((e) => e.id === extensionId);
     if (ext) {
       const fullPath = path.join(ext.path, filePath);
       return net.fetch(`file://${fullPath}`);

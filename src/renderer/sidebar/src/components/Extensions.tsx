@@ -22,11 +22,25 @@ export const Extensions: React.FC = () => {
   }, []);
 
   const handleToggle = async (id: string) => {
-    await (window as any).sidebarAPI.toggleExtension(id);
+    try {
+      await (window as any).sidebarAPI.toggleExtension(id);
+    } catch (err) {
+      console.error("Failed to toggle extension:", err);
+      // Refresh the list to ensure UI is in sync
+      const updated = await (window as any).sidebarAPI.listExtensions();
+      setExtensions(updated);
+    }
   };
 
   const handleRemove = async (id: string) => {
-    await (window as any).sidebarAPI.removeExtension(id);
+    try {
+      await (window as any).sidebarAPI.removeExtension(id);
+    } catch (err) {
+      console.error("Failed to remove extension:", err);
+      // Refresh the list to ensure UI is in sync
+      const updated = await (window as any).sidebarAPI.listExtensions();
+      setExtensions(updated);
+    }
   };
 
   const handleOpenPopup = async (id: string) => {

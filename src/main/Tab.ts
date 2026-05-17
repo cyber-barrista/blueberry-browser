@@ -90,8 +90,9 @@ export class Tab {
     });
   }
 
-  private injectCWSButtonIfNeeded(url: string): void {
-    if (url.includes("chromewebstore.google.com")) {
+   private injectCWSButtonIfNeeded(url: string): void {
+    const cwsDomains = ["chromewebstore.google.com", "chrome.google.com/webstore"];
+    if (cwsDomains.some(domain => url.includes(domain))) {
       console.log("[CWS] Injecting install button for:", url);
       const ids = this.getInstalledIds ? this.getInstalledIds() : [];
       const setIds = `window.__blueberryInstalledIds = ${JSON.stringify(ids)}; window.__blueberryInjected = false;`;
